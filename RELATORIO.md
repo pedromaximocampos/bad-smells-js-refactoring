@@ -7,7 +7,7 @@
 **Disciplina:** Engenharia de Software / Qualidade de Código  
 **Trabalho:** Detecção de Bad Smells e Refatoração Segura  
 **Aluno:** Pedro Máximo Campos  
-**Matrícula:** [Inserir Matrícula]  
+**Matrícula:** 69739
 **Repositório:** https://github.com/pedromaximocampos/bad-smells-js-refactoring  
 **Data:** 09 de novembro de 2025
 
@@ -29,33 +29,36 @@ O projeto simula um serviço de geração de relatórios onde usuários com dife
 
 **Descrição:**  
 O método `generateReport()` possui uma complexidade cognitiva de 27, muito acima do limite recomendado de 15 (configurado no ESLint). O método possui múltiplos níveis de aninhamento de condicionais (`if/else`) que verificam simultaneamente:
+
 - Tipo de relatório (CSV ou HTML)
 - Role do usuário (ADMIN ou USER)
 - Valor dos itens (para filtros e priorização)
 
 **Por que é problemático:**
+
 - **Manutenibilidade:** Dificulta a compreensão do fluxo lógico do código
 - **Testabilidade:** Impossível testar unidades isoladas da lógica
 - **Extensibilidade:** Adicionar um novo formato de relatório requer modificar múltiplos pontos no código
 - **Propensão a bugs:** Alta chance de introduzir erros ao fazer alterações
 
 **Exemplo do código problemático:**
+
 ```javascript
 for (const item of items) {
-  if (user.role === 'ADMIN') {
+  if (user.role === "ADMIN") {
     if (item.value > 1000) {
       item.priority = true;
     }
-    if (reportType === 'CSV') {
+    if (reportType === "CSV") {
       // lógica CSV
-    } else if (reportType === 'HTML') {
+    } else if (reportType === "HTML") {
       // lógica HTML
     }
-  } else if (user.role === 'USER') {
+  } else if (user.role === "USER") {
     if (item.value <= 500) {
-      if (reportType === 'CSV') {
+      if (reportType === "CSV") {
         // lógica CSV duplicada
-      } else if (reportType === 'HTML') {
+      } else if (reportType === "HTML") {
         // lógica HTML duplicada
       }
     }
@@ -71,10 +74,12 @@ for (const item of items) {
 
 **Descrição:**  
 A lógica de formatação de linhas para CSV e HTML está duplicada em dois blocos: um para usuários ADMIN e outro para usuários USER. As mesmas strings de formatação aparecem repetidas, como:
+
 - `report += \`${item.id},${item.name},${item.value},${user.name}\\n\`;`
 - `report += \`<tr><td>${item.id}</td><td>${item.name}</td><td>${item.value}</td></tr>\\n\`;`
 
 **Por que é problemático:**
+
 - **Manutenibilidade:** Mudanças na formatação precisam ser feitas em múltiplos lugares
 - **Inconsistência:** Risco de atualizar um local e esquecer outro
 - **Violação do DRY:** "Don't Repeat Yourself" - princípio fundamental de código limpo
@@ -98,6 +103,7 @@ O ESLint detectou condicionais que podem ser mescladas. O código verifica prime
 ```
 
 **Por que é problemático:**
+
 - **Legibilidade:** Aumenta a indentação e dificulta a leitura
 - **Complexidade:** Adiciona complexidade cognitiva desnecessária
 - **Manutenção:** Mais difícil de modificar a lógica de filtro
@@ -117,6 +123,7 @@ if (item.value > 1000) { // O que significa 1000?
 ```
 
 **Por que é problemático:**
+
 - **Manutenibilidade:** Difícil alterar esses valores se mudarem regras de negócio
 - **Legibilidade:** Não é claro o que esses números representam
 - **Testabilidade:** Dificulta a criação de testes com casos de borda
@@ -128,6 +135,7 @@ if (item.value > 1000) { // O que significa 1000?
 ### 3.1. Configuração Utilizada
 
 Arquivo `.eslintrc.json`:
+
 ```json
 {
   "env": {
@@ -135,10 +143,7 @@ Arquivo `.eslintrc.json`:
     "node": true,
     "jest": true
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:sonarjs/recommended"
-  ],
+  "extends": ["eslint:recommended", "plugin:sonarjs/recommended"],
   "plugins": ["sonarjs"],
   "rules": {
     "sonarjs/cognitive-complexity": ["error", 5],
@@ -151,16 +156,18 @@ Arquivo `.eslintrc.json`:
 ### 3.2. Resultado da Análise (Antes da Refatoração)
 
 **Comando executado:**
+
 ```bash
 npx eslint src/
 ```
 
 **Saída:**
+
 ```
 D:\bad-smells-js-refactoring\src\ReportGenerator.js
-  11:3   error  Refactor this function to reduce its Cognitive Complexity 
+  11:3   error  Refactor this function to reduce its Cognitive Complexity
                 from 27 to the 5 allowed  sonarjs/cognitive-complexity
-  43:14  error  Merge this if statement with the nested one               
+  43:14  error  Merge this if statement with the nested one
                 sonarjs/no-collapsible-if
 
 ✖ 2 problems (2 errors, 0 warnings)
@@ -193,22 +200,24 @@ O smell mais crítico identificado foi a **alta complexidade cognitiva** do mét
 **Objetivo:** Eliminar as condicionais repetidas de tipo de relatório
 
 **Antes:**
+
 ```javascript
-if (reportType === 'CSV') {
-  report += 'ID,NOME,VALOR,USUARIO\n';
-} else if (reportType === 'HTML') {
-  report += '<html><body>\n';
-  report += '<h1>Relatório</h1>\n';
+if (reportType === "CSV") {
+  report += "ID,NOME,VALOR,USUARIO\n";
+} else if (reportType === "HTML") {
+  report += "<html><body>\n";
+  report += "<h1>Relatório</h1>\n";
   // ...
 }
 ```
 
 **Depois:**
+
 ```javascript
 // Criação de estratégias por tipo de relatório
 class CSVReportStrategy extends ReportStrategy {
   generateHeader() {
-    return 'ID,NOME,VALOR,USUARIO\n';
+    return "ID,NOME,VALOR,USUARIO\n";
   }
   // ...
 }
@@ -226,6 +235,7 @@ report = strategy.generateHeader(user.name);
 ```
 
 **Benefícios:**
+
 - Elimina múltiplas condicionais
 - Facilita adição de novos formatos (basta criar nova estratégia)
 - Cada estratégia tem responsabilidade única
@@ -237,11 +247,12 @@ report = strategy.generateHeader(user.name);
 **Objetivo:** Quebrar o método gigante em métodos menores com responsabilidades bem definidas
 
 **Antes:**
+
 ```javascript
 generateReport(reportType, user, items) {
   let report = '';
   let total = 0;
-  
+
   // 70 linhas de código com múltiplas responsabilidades
   // - Filtrar items por role
   // - Marcar prioridades
@@ -253,6 +264,7 @@ generateReport(reportType, user, items) {
 ```
 
 **Depois:**
+
 ```javascript
 generateReport(reportType, user, items) {
   const strategy = this.getStrategy(reportType);
@@ -267,6 +279,7 @@ buildReport(strategy, user, items) { /* ... */ }
 ```
 
 **Benefícios:**
+
 - Cada método tem uma responsabilidade única
 - Fácil de testar unitariamente
 - Fácil de entender o fluxo do programa
@@ -279,12 +292,14 @@ buildReport(strategy, user, items) { /* ... */ }
 **Objetivo:** Tornar os números hardcoded significativos
 
 **Antes:**
+
 ```javascript
 if (item.value <= 500) {
 if (item.value > 1000) {
 ```
 
 **Depois:**
+
 ```javascript
 const USER_VALUE_LIMIT = 500;
 const PRIORITY_THRESHOLD = 1000;
@@ -294,6 +309,7 @@ if (item.value > PRIORITY_THRESHOLD) {
 ```
 
 **Benefícios:**
+
 - Código autodocumentado
 - Fácil alterar valores em um único lugar
 - Testabilidade melhorada
@@ -305,30 +321,33 @@ if (item.value > PRIORITY_THRESHOLD) {
 **Objetivo:** Simplificar condicionais aninhadas
 
 **Antes:**
+
 ```javascript
-if (user.role === 'ADMIN') {
+if (user.role === "ADMIN") {
   // lógica admin
-} else if (user.role === 'USER') {
+} else if (user.role === "USER") {
   // lógica user
 }
 ```
 
 **Depois:**
+
 ```javascript
 filterItemsByUserRole(user, items) {
   if (user.role === 'ADMIN') {
     return this.processAdminItems(items);
   }
-  
+
   if (user.role === 'USER') {
     return this.processUserItems(items);
   }
-  
+
   return [];
 }
 ```
 
 **Benefícios:**
+
 - Reduz aninhamento
 - Fluxo mais linear e fácil de seguir
 - Elimina else desnecessário
@@ -339,13 +358,13 @@ filterItemsByUserRole(user, items) {
 
 #### **Métricas de Qualidade:**
 
-| Métrica | Antes | Depois | Melhoria |
-|---------|-------|--------|----------|
-| Complexidade Cognitiva | 27 | ~5 por método | **81% redução** |
-| Linhas do método principal | 60+ | 5 | **92% redução** |
-| Níveis de aninhamento | 4 | 1-2 | **50-75% redução** |
-| Duplicação de código | Alta | Nenhuma | **100% eliminada** |
-| Erros do ESLint | 2 | 0 | **100% resolvidos** |
+| Métrica                    | Antes | Depois        | Melhoria            |
+| -------------------------- | ----- | ------------- | ------------------- |
+| Complexidade Cognitiva     | 27    | ~5 por método | **81% redução**     |
+| Linhas do método principal | 60+   | 5             | **92% redução**     |
+| Níveis de aninhamento      | 4     | 1-2           | **50-75% redução**  |
+| Duplicação de código       | Alta  | Nenhuma       | **100% eliminada**  |
+| Erros do ESLint            | 2     | 0             | **100% resolvidos** |
 
 #### **Estrutura do Código Refatorado:**
 
@@ -359,28 +378,34 @@ const USER_VALUE_LIMIT = 500;
 const PRIORITY_THRESHOLD = 1000;
 
 // 2. Estratégias para diferentes formatos (Strategy Pattern)
-class ReportStrategy { /* interface base */ }
-class CSVReportStrategy extends ReportStrategy { /* implementação CSV */ }
-class HTMLReportStrategy extends ReportStrategy { /* implementação HTML */ }
+class ReportStrategy {
+  /* interface base */
+}
+class CSVReportStrategy extends ReportStrategy {
+  /* implementação CSV */
+}
+class HTMLReportStrategy extends ReportStrategy {
+  /* implementação HTML */
+}
 
 // 3. Gerador com métodos pequenos e focados
 export class ReportGenerator {
   generateReport(reportType, user, items) {
     // Orquestra o processo em 3 linhas
   }
-  
+
   filterItemsByUserRole(user, items) {
     // Delega para métodos específicos
   }
-  
+
   processAdminItems(items) {
     // Lógica isolada para admin
   }
-  
+
   processUserItems(items) {
     // Lógica isolada para user
   }
-  
+
   buildReport(strategy, user, items) {
     // Constrói relatório usando estratégia
   }
@@ -396,6 +421,7 @@ export class ReportGenerator {
 Durante todo o processo de refatoração, a suíte de testes foi executada repetidamente para garantir que nenhuma funcionalidade fosse quebrada.
 
 **Resultado dos testes:**
+
 ```
 PASS  tests/ReportGenerator.refactored.test.js
 PASS  tests/ReportGenerator.test.js
@@ -411,11 +437,13 @@ Time:        0.911 s
 ### 5.2. Validação com ESLint (Depois da Refatoração)
 
 **Comando executado:**
+
 ```bash
 npx eslint src/ReportGenerator.refactored.js
 ```
 
 **Resultado:**
+
 ```
 (Nenhum erro ou warning)
 ```
@@ -425,6 +453,7 @@ npx eslint src/ReportGenerator.refactored.js
 ### 5.3. Cobertura de Testes
 
 A suíte de testes cobre:
+
 - ✅ Relatórios CSV para ADMIN (todos os items)
 - ✅ Relatórios HTML para ADMIN (com priorização)
 - ✅ Relatórios CSV para USER (filtrados)
@@ -453,21 +482,25 @@ Sem os testes, a refatoração seria arriscada e propensa a introduzir bugs suti
 A eliminação dos bad smells trouxe benefícios concretos:
 
 **Para Manutenibilidade:**
+
 - Código 5x mais fácil de entender
 - Mudanças futuras são localizadas e seguras
 - Novos desenvolvedores conseguem contribuir mais rapidamente
 
 **Para Testabilidade:**
+
 - Cada método pode ser testado unitariamente
 - Testes mais simples e diretos
 - Melhor cobertura de cenários
 
 **Para Extensibilidade:**
+
 - Adicionar novo formato de relatório: apenas criar nova estratégia
 - Adicionar nova role de usuário: apenas criar novo método de processamento
 - Princípio Open/Closed respeitado
 
 **Para Qualidade Geral:**
+
 - Redução de 81% na complexidade cognitiva
 - Eliminação total de duplicação
 - Código autodocumentado com constantes nomeadas
@@ -493,9 +526,11 @@ O código refatorado está pronto para evolução futura, respeitando princípio
 ## 7. Arquivos Entregues
 
 ### 7.1. Repositório GitHub
+
 **Link:** https://github.com/pedromaximocampos/bad-smells-js-refactoring
 
 ### 7.2. Arquivos Criados/Modificados
+
 - ✅ `src/ReportGenerator.refactored.js` - Versão refatorada
 - ✅ `tests/ReportGenerator.refactored.test.js` - Testes para versão refatorada
 - ✅ `.eslintrc.json` - Configuração do ESLint + SonarJS
@@ -521,4 +556,3 @@ npx eslint src/ReportGenerator.refactored.js
 ---
 
 **Fim do Relatório**
-
